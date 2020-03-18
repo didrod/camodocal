@@ -145,6 +145,12 @@ int main(int argc, char** argv)
         std::cerr << "# INFO: # images: " << imageFilenames.size() << std::endl;
     }
 
+    if (verbose)
+    {
+        std::cerr << "# INFO: viewResults: " <<
+            (viewResults ? "true" : "false") << std::endl;
+    }
+
     cv::Mat image = cv::imread(imageFilenames.front(), -1);
     const cv::Size frameSize = image.size();
 
@@ -171,8 +177,10 @@ int main(int argc, char** argv)
             cv::Mat sketch;
             chessboard.getSketch().copyTo(sketch);
 
-            cv::imshow("Image", sketch);
-            cv::waitKey(50);
+            if (viewResults) {
+                cv::imshow("Image", sketch);
+                cv::waitKey(1);
+            }
         }
         else if (verbose)
         {
@@ -180,7 +188,8 @@ int main(int argc, char** argv)
         }
         chessboardFound.at(i) = chessboard.cornersFound();
     }
-    cv::destroyWindow("Image");
+    if (viewResults)
+        cv::destroyWindow("Image");
 
     if (calibration.sampleCount() < 10)
     {
