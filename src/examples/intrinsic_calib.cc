@@ -1,3 +1,4 @@
+#include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
@@ -20,6 +21,7 @@ int main(int argc, char** argv)
     std::string cameraName;
     std::string prefix;
     std::string fileExtension;
+    std::string outDir;
     bool useOpenCV;
     bool viewResults;
     bool verbose;
@@ -36,6 +38,7 @@ int main(int argc, char** argv)
         ("file-extension,e", boost::program_options::value<std::string>(&fileExtension)->default_value(".bmp"), "File extension of images")
         ("camera-model", boost::program_options::value<std::string>(&cameraModel)->default_value("mei"), "Camera model: kannala-brandt | mei | pinhole")
         ("camera-name", boost::program_options::value<std::string>(&cameraName)->default_value("camera"), "Name of camera")
+        ("outdir,o", boost::program_options::value<std::string>(&outDir)->default_value("."), "Output directory")
         ("opencv", boost::program_options::bool_switch(&useOpenCV)->default_value(false), "Use OpenCV to detect corners")
         ("view-results", boost::program_options::bool_switch(&viewResults)->default_value(false), "View results")
         ("verbose,v", boost::program_options::bool_switch(&verbose)->default_value(false), "Verbose output")
@@ -205,9 +208,6 @@ int main(int argc, char** argv)
     double startTime = camodocal::timeInSeconds();
 
     calibration.calibrate();
-    calibration.writeParams(cameraName + "_camera_calib.yaml");
-    calibration.writeChessboardData(cameraName + "_chessboard_data.dat");
-
     if (verbose)
     {
         std::cout << "# INFO: Calibration took a total time of "
@@ -215,9 +215,30 @@ int main(int argc, char** argv)
                   << " sec.\n";
     }
 
-    if (verbose)
     {
-        std::cerr << "# INFO: Wrote calibration file to " << cameraName + "_camera_calib.yaml" << std::endl;
+        using std::string;
+        using boost::filesystem::path;
+        const path outDir_(outDir);
+
+        const path camFile(cameraName + "_camera_calib.yaml");
+        const path camPath = outDir_ / camFile;
+
+        const path chessFile(cameraName + "_chessboard_data.dat");
+        const path chessPath = outDir_ / chessFile;
+
+        calibration.writeParams(camPath.string());
+        calibration.writeChessboardData(chessPath.string());
+
+        if (verbose)
+        {
+            const string fmt = "# INFO: Wrote %1% to %2%";
+            std::cerr
+                << boost::format(fmt) % "calibration file" % camPath.string()
+                << std::endl;
+            std::cerr
+                << boost::format(fmt) % "chessboard data" % chessPath.string()
+                << std::endl;
+        }
     }
 
     if (viewResults)
